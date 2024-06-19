@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Device Data Submission</title>
+</head>
+<body>
+<form id="deviceForm">
+    <label for="deviceSerialNumber">Device Serial Number:</label>
+    <input type="text" id="deviceSerialNumber" name="deviceSerialNumber"><br>
+    <label for="portNumber">Port Number:</label>
+    <input type="text" id="portNumber" name="portNumber"><br>
+    <label for="type">Type:</label>
+    <select id="type" name="type">
+        <option value="Type1">Type1</option>
+        <option value="Type2">Type2</option>
+    </select><br>
+    <button type="button" onclick="submitForm()">Submit</button>
+</form>
+<button type="button" onclick="downloadSignature()">Download Signature</button>
+
+<div id="jsonDisplay"></div>
+
+<script>
+        async function submitForm() {
+            const form = document.getElementById('deviceForm');
+            const formData = new FormData(form);
+
+            const deviceData = {
+                deviceSerialNumber: formData.get('deviceSerialNumber'),
+                portNumber: formData.get('portNumber'),
+                type: formData.get('type')
+            };
+
+            const response = await fetch('/submit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(deviceData)
+            });
+
+            const json = await response.text();
+            document.getElementById('jsonDisplay').innerText = json;
+        }
+
+        async function downloadSignature() {
+            const json = localStorage.getItem('deviceDataJson');
+
+            if (!json) {
+                alert('Please submit the form first.');
+                return;
+            }
+
+            const response = await fetch(`/download-signature?json=${encodeURIComponent(json)}`);
+            const signature = await response.text();
+
+            const element = document.createElement('a');
+            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(signature));
+            element.setAttribute('download', 'signature.txt');
+
+            element.style.display = 'none';
+            document.body.appendChild(element);
+
+            element.click();
+
+            document.body.removeChild(element);
+        }
+    </script>
+</body>
+</html>
